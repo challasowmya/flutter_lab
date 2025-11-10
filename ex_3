@@ -1,0 +1,115 @@
+import 'package:flutter/material.dart';
+void main() {
+  runApp(const MyApp());
+}
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: "BMI Calculator - Dynamic ListView",
+      theme: ThemeData(primarySwatch: Colors.teal),
+      home: const BMICategoryPage(),
+    );
+  }
+}
+/// BMI Category Model
+class BMICategory {
+  final String name;
+  final String range;
+  final String description;
+  const BMICategory({
+    required this.name,
+    required this.range,
+    required this.description,
+  });
+}
+/// Home Page with ListView.builder
+class BMICategoryPage extends StatelessWidget {
+  const BMICategoryPage({super.key});
+
+  // List of categories
+  final List<BMICategory> bmiCategories = const [
+    BMICategory(
+      name: "Underweight",
+      range: "< 18.5",
+      description:
+          "You are underweight. This may lead to low immunity and weakness. Try to eat a balanced diet with sufficient calories.",
+    ),
+    BMICategory(
+      name: "Normal",
+      range: "18.5 – 24.9",
+      description:
+          "Congratulations! Your BMI is normal. Maintain a healthy lifestyle with balanced food and regular exercise.",
+    ),
+    BMICategory(
+      name: "Overweight",
+      range: "25 – 29.9",
+      description:
+          "You are overweight. This may increase the risk of lifestyle diseases. Focus on regular exercise and a controlled diet.",
+    ),
+    BMICategory(
+      name: "Obese",
+      range: "30 and above",
+      description:
+          "You are obese. This is a health risk. Please consult a doctor and work on reducing weight with diet and physical activity.",
+    ),
+  ];
+  void _showDetails(BuildContext context, BMICategory category) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: Text(
+            category.name,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            "Range: ${category.range}\n\n${category.description}",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("OK"),
+            )
+          ],
+        );
+      },
+    );
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("BMI Categories"),
+        backgroundColor: Colors.teal,
+      ),
+      body: ListView.builder(
+        itemCount: bmiCategories.length,
+        itemBuilder: (context, index) {
+          final category = bmiCategories[index];
+
+          return Column(
+            children: [
+              Card(
+                elevation: 2,
+                margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.teal.shade200,
+                    child: Text(category.name[0]),
+                  ),
+                  title: Text(
+                    category.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text("Range: ${category.range}"),
+                  onTap: () => _showDetails(context, category),
+                ),
+              ),
+              const Divider(height: 1),
+            ], ); }, ), ); }}
