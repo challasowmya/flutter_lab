@@ -1,0 +1,176 @@
+import 'package:flutter/material.dart';
+void main() {
+  runApp(const MyApp());
+}
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: "BMI Calculator",
+      theme: ThemeData(primarySwatch: Colors.teal),
+      home: const BMICalculatorPage(),
+    );
+  }
+}
+class BMICalculatorPage extends StatefulWidget {
+  const BMICalculatorPage({super.key});
+  @override
+  State<BMICalculatorPage> createState() => _BMICalculatorPageState();
+}
+class _BMICalculatorPageState extends State<BMICalculatorPage> {
+  final TextEditingController heightController = TextEditingController();
+  final TextEditingController weightController = TextEditingController();
+  double? bmi;
+  String category = "";
+  void calculateBMI() {
+    final double? height = double.tryParse(heightController.text);
+    final double? weight = double.tryParse(weightController.text);
+    if (height != null && weight != null && height > 0 && weight > 0) {
+      double heightInMeters = height / 100;
+      double bmiValue = weight / (heightInMeters * heightInMeters)
+      String resultCategory;
+      if (bmiValue < 18.5) {
+        resultCategory = "Underweight";
+      } else if (bmiValue < 25) {
+        resultCategory = "Normal";
+      } else if (bmiValue < 30) {
+        resultCategory = "Overweight";
+      } else {
+        resultCategory = "Obese";
+      }
+      setState(() {
+        bmi = bmiValue;
+        category = resultCategory;
+      });
+    } else {
+      setState(() {
+        bmi = null;
+        category = "Invalid input!";
+      });
+    }
+  }
+  final List<BMICategory> bmiCategories = const [
+    BMICategory(
+      name: "Underweight",
+      range: "< 18.5",
+      description: "You need to gain some healthy weight.",
+    ),
+    BMICategory(
+      name: "Normal",
+      range: "18.5 – 24.9",
+      description: "You are healthy! Keep maintaining your lifestyle.",
+    ),
+    BMICategory(
+      name: "Overweight",
+      range: "25 – 29.9",
+      description: "Try to balance diet and exercise regularly.",
+    ),
+    BMICategory(
+      name: "Obese",
+      range: "30 and above",
+      description: "You need to reduce weight for better health.",
+    ),
+  ];
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("BMI Calculator"),
+        backgroundColor: Colors.teal,
+      ),
+      body: Column(
+        children: [
+          // Input Fields
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: TextField(
+              controller: heightController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "Height (cm)",
+                prefixIcon: const Icon(Icons.height),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: TextField(
+              controller: weightController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "Weight (kg)",
+                prefixIcon: const Icon(Icons.monitor_weight),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: calculateBMI,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text(
+              "Calculate BMI",
+              style: TextStyle(fontSize: 18),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            bmi == null
+                ? "Enter values to calculate BMI"
+                : "Your BMI: ${bmi!.toStringAsFixed(1)} ($category)",
+            style: const TextStyle(
+                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal),
+          ),
+          const SizedBox(height: 20),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(12),
+              children: bmiCategories
+                  .map((cat) => MyListItem(category: cat))
+                  .toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+class BMICategory {
+  final String name;
+  final String range;
+  final String description;
+  const BMICategory({
+    required this.name,
+    required this.range,
+    required this.description,
+  });
+}
+class MyListItem extends StatelessWidget {
+  final BMICategory category;
+  const MyListItem({super.key, required this.category});
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 3,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: const Icon(Icons.health_and_safety, color: Colors.teal, size: 36),
+        title: Text(category.name,
+            style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text("${category.range}\n${category.description}"),
+        isThreeLine: true,
+      ),
+    );
+  }
+}
