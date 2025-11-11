@@ -1,0 +1,212 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+/// 🩺 BMI Calculator App
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'BMI Calculator',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        useMaterial3: true,
+      ),
+      home: const HomePage(),
+    );
+  }
+}
+
+/// Home Page showing app title and button to navigate to BMI form
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("BMI Calculator"),
+        backgroundColor: scheme.primary,
+        foregroundColor: Colors.white,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.fitness_center, size: 100, color: Colors.teal),
+            const SizedBox(height: 20),
+            const Text(
+              "Welcome to BMI Calculator",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BMICalculatorScreen()),
+                );
+              },
+              icon: const Icon(Icons.calculate),
+              label: const Text("Start Calculation"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// StatefulWidget for BMI Calculator Form
+class BMICalculatorScreen extends StatefulWidget {
+  const BMICalculatorScreen({super.key});
+
+  @override
+  State<BMICalculatorScreen> createState() => _BMICalculatorScreenState();
+}
+
+class _BMICalculatorScreenState extends State<BMICalculatorScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  final _heightController = TextEditingController();
+  final _weightController = TextEditingController();
+
+  double? _bmiResult;
+  String _category = "";
+
+  /// Function to calculate BMI
+  void _calculateBMI() {
+    if (_formKey.currentState!.validate()) {
+      final height = double.parse(_heightController.text) / 100; // cm → m
+      final weight = double.parse(_weightController.text);
+
+      final bmi = weight / (height * height);
+
+      String category;
+      if (bmi < 18.5) {
+        category = "Underweight";
+      } else if (bmi >= 18.5 && bmi < 25) {
+        category = "Normal weight";
+      } else if (bmi >= 25 && bmi < 30) {
+        category = "Overweight";
+      } else {
+        category = "Obese";
+      }
+
+      setState(() {
+        _bmiResult = bmi;
+        _category = category;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("BMI Calculator Form"),
+        backgroundColor: scheme.primary,
+        foregroundColor: Colors.white,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              const Text(
+                "Enter your details",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+
+              // Height Input
+              TextFormField(
+                controller: _heightController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: "Height (cm)",
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.height),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please enter your height";
+                  }
+                  final val = double.tryParse(value);
+                  if (val == null || val <= 0) {
+                    return "Enter valid height";
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Weight Input
+              TextFormField(
+                controller: _weightController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: "Weight (kg)",
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.monitor_weight),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please enter your weight";
+                  }
+                  final val = double.tryParse(value);
+                  if (val == null || val <= 0) {
+                    return "Enter valid weight";
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Calculate Button
+              FilledButton.icon(
+                onPressed: _calculateBMI,
+                icon: const Icon(Icons.calculate_outlined),
+                label: const Text("Calculate BMI"),
+              ),
+              const SizedBox(height: 20),
+
+              // Result Display
+              if (_bmiResult != null)
+                Center(
+                  child: Column(
+                    children: [
+                      Text(
+                        "Your BMI: ${_bmiResult!.toStringAsFixed(2)}",
+                        style: const TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Category: $_category",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: scheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
