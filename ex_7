@@ -1,0 +1,213 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(BMICalculatorApp());
+}
+
+class BMICalculatorApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'BMI Calculator with Firestore',
+      theme: ThemeData(primarySwatch: Colors.teal),
+      home: BMIScreen(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class BMIScreen extends StatefulWidget {
+  @override
+  _BMIScreenState createState() => _BMIScreenState();
+}
+
+class _BMIScreenState extends State<BMIScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _heightController = TextEditingController();
+  final _weightController = TextEditingController();
+  String status = "";
+
+  // Firestore reference
+  final CollectionReference bmiRecords =
+      FirebaseFirestore.instance.collection('bmi_records');
+
+  // Function to calculate BMI and save to Firestore
+  Future<void> calculateAndSaveBMI() async {
+    if (_formKey.currentState != null && _formKey.currentState!.validate()) {
+      double height = double.parse(_heightController.text);
+      double weight = double.parse(_weightController.text);
+
+      double bmi = weight / ((height / 100) * (height / 100));
+      String category = '';
+
+      if (bmi < 18.5)
+        category = 'Underweight';
+      else if (bmi < 25)
+        category = 'Normal';
+      else if (bmi < 30)
+        category = 'Overweight';
+      else
+        category = 'Obese';
+
+      // Save data to Firestore
+      await bmiRecords.add({
+        'height': height,
+        'weight': weight,
+        'bmi': bmi,
+        'category': category,
+        'date': DateTime.now().toString(),
+      });
+
+      setState(() {
+        status = "BMI calculated and saved successfully!";
+      });
+
+      _heightController.clear();
+      _weightController.clear();
+    }
+  }
+
+  // Calculate average BMI from all records
+  double calculateAverageBMI(List<QueryDocumentSnapshot> records) {
+    if (records.isEmpty) return 0;
+    double total = 0;
+    for (var record in records) {
+      total += (record['bmi'] as num);
+    }
+    return total / records.length;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('BMI Calculator (Firestore)'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  Text(
+                    'Enter your details:',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 15),
+                  TextFormField(
+                    controller: _heightController,
+                    decoration: InputDecoration(labelText: 'Height (cm)'),
+                    keyboardType: TextInputType.number,
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Enter height' : null,
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    controller: _weightController,
+                    decoration: InputDecoration(labelText: 'Weight (kg)'),
+                    keyboardType: TextInputType.number,
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Enter weight' : null,
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: calculateAndSaveBMI,
+                    child: Text('Calculate & Save BMI'),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    status,
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 20),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: bmiRecords.orderBy('date', descending: true).snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+                  if (!snapshot.hasData) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+
+                  final records = snapshot.data!.docs;
+                  if (records.isEmpty) {
+                    return Center(child: Text('No BMI records found'));
+                  }
+
+                  double avgBMI = calculateAverageBMI(records);
+
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: records.length,
+                          itemBuilder: (context, index) {
+                            final record = records[index];
+                            final bmi = record['bmi'] as double;
+                            final category = record['category'];
+                            final date = record['date'];
+
+                            return Card(
+                              margin: EdgeInsets.all(8),
+                              child: ListTile(
+                                title: Text(
+                                  'BMI: ${bmi.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  'Height: ${record['height']} cm\n'
+                                  'Weight: ${record['weight']} kg\n'
+                                  'Status: $category\n'
+                                  'Date: $date',
+                                ),
+                                trailing: bmi < 18.5 || bmi > 25
+                                    ? Text(
+                                        '⚠',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 24,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        color: Colors.teal[50],
+                        child: Text(
+                          'Average BMI: ${avgBMI.toStringAsFixed(2)}',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+ex7
